@@ -44,9 +44,19 @@ class Drone:
                 # Subscribe to commands for this drone
                 command = await self.server.get(f"command-{self.drone_id}")
                 if command:
-                    logging.info(f"Received command for {self.drone_id}: {command}")
-                    # Implement command handling logic here
-                    # ...
+                    print(f"Received command for {self.drone_id}: {command}")
+                    key, value = command.split('=')
+            
+                    if key == f"enable-{self.drone_id}":
+                        self.enabled = value.lower() == 'true'
+                        print(f"Drone {self.drone_id} enabled status: {self.enabled}")
+
+                    elif key == "fleet-speed":
+                        # Assuming there's a method to set speed for the drone
+                        self.set_speed(float(value))
+                        print(f"Speed for drone {self.drone_id} set to {value}")
+
+                    # Add more command handling as needed
 
                 await asyncio.sleep(1)
             except Exception as e:
