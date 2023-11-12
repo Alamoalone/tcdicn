@@ -1,10 +1,6 @@
 import asyncio
 import random
-import logging
 from tcdicn import Server
-
-# Configure basic logging
-logging.basicConfig(level=logging.INFO)
 
 class Drone:
     def __init__(self, server, drone_id):
@@ -14,10 +10,13 @@ class Drone:
         self.temperature = 20     # Initial temperature in Celsius
         self.battery = 100        # Initial battery percentage
         self.power_usage = 5      # Power usage in percentage per tick
+        self.enabled = True       # Drone enabled status
+        self.fleet_speed = 1.0    # Fleet speed
+        self.altitude = 0         # Altitude
 
     async def update_sensors(self):
         while True:
-            try:
+            if self.enabled:
                 # Simulate sensor reading changes
                 self.position = (self.position[0] + random.uniform(-0.1, 0.1),
                                  self.position[1] + random.uniform(-0.1, 0.1))
@@ -29,42 +28,36 @@ class Drone:
                 await self.server.set(f"{self.drone_id}-temperature", str(self.temperature))
                 await self.server.set(f"{self.drone_id}-battery", str(self.battery))
 
-                # Reduce update frequency when battery is low
-                if self.battery < 20:
-                    await asyncio.sleep(10)
-                else:
-                    await asyncio.sleep(5)
-            except Exception as e:
-                logging.error(f"Error updating sensors: {e}")
-                await asyncio.sleep(5)  # Wait before retrying in case of error
+            # Wait a bit before next update
+            await asyncio.sleep(5)
+
+    async def process_command(self, command):
+        key, value = command.split('=')
+        
+        if key == "enable-drone":
+            self.enabled = value.lower() == "true"
+        elif key == "fleet-speed":
+            self.fleet_speed = float(value)
+        elif key == "check-battery":
+            print(f"Drone {self.drone_id} battery level: {self.battery}%")
+        elif key == "set-altitude":
+            self.altitude = float(value)
+        elif key == "emergency-land":
+            self.emergency_land()
+        # Add more elif blocks for other commands
 
     async def subscribe_to_commands(self):
         while True:
             try:
-                # Subscribe to commands for this drone
                 command = await self.server.get(f"command-{self.drone_id}")
                 if command:
                     print(f"Received command for {self.drone_id}: {command}")
-                    key, value = command.split('=')
-            
-                    if key == f"enable-{self.drone_id}":
-                        self.enabled = value.lower() == 'true'
-                        print(f"Drone {self.drone_id} enabled status: {self.enabled}")
-
-                    elif key == "fleet-speed":
-                        # Assuming there's a method to set speed for the drone
-                        self.set_speed(float(value))
-                        print(f"Speed for drone {self.drone_id} set to {value}")
-
-                    # Add more command handling as needed
-
-                await asyncio.sleep(1)
+                    await self.process_command(command)
             except Exception as e:
                 logging.error(f"Error receiving command: {e}")
                 await asyncio.sleep(1)  # Wait before retrying in case of error
 
     async def run(self):
-        # Start updating sensors and subscribing to commands
         await asyncio.gather(
             self.update_sensors(),
             self.subscribe_to_commands(),
