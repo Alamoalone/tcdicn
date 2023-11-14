@@ -1,5 +1,6 @@
 import asyncio
 import random
+import logging
 from tcdicn import Server
 
 class Drone:
@@ -23,10 +24,10 @@ class Drone:
                 self.temperature += random.uniform(-0.5, 0.5)
                 self.battery -= self.power_usage / 100
 
-                # Publish sensor readings
-                await self.server.set(f"{self.drone_id}-position", str(self.position))
-                await self.server.set(f"{self.drone_id}-temperature", str(self.temperature))
-                await self.server.set(f"{self.drone_id}-battery", str(self.battery))
+                # Publish sensor readings using ICN
+                await self.server.publish(f"{self.drone_id}-position", str(self.position))
+                await self.server.publish(f"{self.drone_id}-temperature", str(self.temperature))
+                await self.server.publish(f"{self.drone_id}-battery", str(self.battery))
 
             # Wait a bit before next update
             await asyncio.sleep(5)
@@ -49,7 +50,7 @@ class Drone:
     async def subscribe_to_commands(self):
         while True:
             try:
-                command = await self.server.get(f"command-{self.drone_id}")
+                command = await self.server.subscribe(f"command-{self.drone_id}")
                 if command:
                     print(f"Received command for {self.drone_id}: {command}")
                     await self.process_command(command)
