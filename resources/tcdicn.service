@@ -1,0 +1,11 @@
+[Unit]
+Description=TCDICN Server
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/tcdicn/examples/node.py
+WorkingDirectory=%h/tcdicn
+Environment="PYTHONPATH=."
+
+[Install]
+WantedBy=default.target

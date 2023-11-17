@@ -1,0 +1,44 @@
+version: "3"
+name: "tcdicn-line"
+
+services:
+
+  a:
+    extends:
+      file: basic.yml
+      service: sensor
+    networks: [ ab ]
+    environment: [ TCDICN_ID=my_cool_sensor ]
+
+  b:
+    extends:
+      file: basic.yml
+      service: node
+    networks: [ ab, bc ]
+
+  c:
+    extends:
+      file: basic.yml
+      service: node
+    networks: [ bc, cd ]
+
+  d:
+    extends:
+      file: basic.yml
+      service: actuator
+    networks: [ cd ]
+    environment: [ TCDICN_ID=my_cool_actuator ]
+
+networks:
+  ab:
+    ipam:
+      config:
+        - subnet: 172.0.1.0/24
+  bc:
+    ipam:
+      config:
+        - subnet: 172.0.2.0/24
+  cd:
+    ipam:
+      config:
+        - subnet: 172.0.3.0/24
